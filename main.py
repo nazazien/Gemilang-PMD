@@ -183,32 +183,32 @@ elif page == "Price Estimation":
             user_input['renovated'] = 1 if st.radio("Sudah Renovasi?", ["Tidak", "Ya"], horizontal=True) == "Ya" else 0
 
         submit = st.form_submit_button("🔮 Prediksi Sekarang")
-    
-    @st.cache_resource
-    def load_model(X_train, y_train):
-        scaler = StandardScaler()
-        X_scaled = scaler.fit_transform(X_train)
-        model = SVR_single(C=10.0, gamma=0.01)
+   
+    if submit:
+        @st.cache_resource
+        def load_model():
+            scaler = StandardScaler()
+            X_scaled = scaler.fit_transform(X_train)
+            model = SVR_single(C=10.0, gamma=0.01)
 
-        start_time = time.time()
-        model.fit(X_scaled, y_train)
-        train_time = time.time() - start_time
+            start_time = time.time()
+            model.fit(X_scaled, y_train)
+            train_time = time.time() - start_time
 
-        return model, scaler, train_time
+            return model, scaler, train_time
 
-    @st.cache_resource
-    def load_multi_kernel_model(X_scaled, y_train):
-        model = MultiKernelSVR(C=10.0, gammas=[0.001, 0.01, 0.1])
+        @st.cache_resource
+        def load_multi_kernel_model(X_scaled, y_train):
+            model = MultiKernelSVR(C=10.0, gammas=[0.001, 0.01, 0.1])
 
-        start_time = time.time()
-        model.fit(X_scaled, y_train)
-        train_time = time.time() - start_time
+            start_time = time.time()
+            model.fit(X_scaled, y_train)
+            train_time = time.time() - start_time
 
-        return model, train_time
-        
-    if submit:        
-        model, scaler, time_single = load_model(X_train, y_train)
+            return model, train_time
+
         user_fitur = np.array([list(user_input.values())], dtype=np.float32)
+        model, scaler, time_single = load_model()
         user_scaled = scaler.transform(user_fitur)
         model_multi, time_multi = load_multi_kernel_model(scaler.transform(X_train), y_train)
         
