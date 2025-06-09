@@ -114,26 +114,26 @@ elif page == "Price Estimation":
             K_test = rbf_kernel(X, self.X_train, gamma=self.gamma)
             return self.model.predict(K_test)
 
-    class MultiKernelSVR:
-        def __init__(self, C=10.0, gammas=[0.001, 0.01, 0.1]):
-            self.C = C
-            self.gammas = gammas
-            self.model = Ridge(alpha=1.0 / (2 * self.C))
+    # class MultiKernelSVR:
+    #     def __init__(self, C=10.0, gammas=[0.001, 0.01, 0.1]):
+    #         self.C = C
+    #         self.gammas = gammas
+    #         self.model = Ridge(alpha=1.0 / (2 * self.C))
 
-        def multi_kernel(self, X1, X2):
-            K_total = np.zeros((X1.shape[0], X2.shape[0]))
-            for gamma in self.gammas:
-                K_total += rbf_kernel(X1, X2, gamma=gamma)
-            return K_total / len(self.gammas)
+    #     def multi_kernel(self, X1, X2):
+    #         K_total = np.zeros((X1.shape[0], X2.shape[0]))
+    #         for gamma in self.gammas:
+    #             K_total += rbf_kernel(X1, X2, gamma=gamma)
+    #         return K_total / len(self.gammas)
 
-        def fit(self, X, y):
-            self.X_train = X
-            K = self.multi_kernel(X, X)
-            self.model.fit(K, y)
+    #     def fit(self, X, y):
+    #         self.X_train = X
+    #         K = self.multi_kernel(X, X)
+    #         self.model.fit(K, y)
 
-        def predict(self, X):
-            K_test = self.multi_kernel(X, self.X_train)
-            return self.model.predict(K_test)
+    #     def predict(self, X):
+    #         K_test = self.multi_kernel(X, self.X_train)
+    #         return self.model.predict(K_test)
 
     fitur = [
         'bedrooms', 'real_bathrooms', 'living_in_m2', 'grade',
@@ -197,20 +197,20 @@ elif page == "Price Estimation":
 
             return model, scaler, train_time
 
-        @st.cache_resource
-        def load_multi_kernel_model(X_scaled, y_train):
-            model = MultiKernelSVR(C=10.0, gammas=[0.001, 0.01, 0.1])
+        # @st.cache_resource
+        # def load_multi_kernel_model(X_scaled, y_train):
+        #     model = MultiKernelSVR(C=10.0, gammas=[0.001, 0.01, 0.1])
 
-            start_time = time.time()
-            model.fit(X_scaled, y_train)
-            train_time = time.time() - start_time
+        #     start_time = time.time()
+        #     model.fit(X_scaled, y_train)
+        #     train_time = time.time() - start_time
 
-            return model, train_time
+        #     return model, train_time
 
         user_fitur = np.array([list(user_input.values())], dtype=np.float32)
         model, scaler, time_single = load_model()
         user_scaled = scaler.transform(user_fitur)
-        model_multi, time_multi = load_multi_kernel_model(scaler.transform(X_train), y_train)
+        # model_multi, time_multi = load_multi_kernel_model(scaler.transform(X_train), y_train)
         
         start_pred_single = time.time()
         estimate = model.predict(user_scaled)[0]
@@ -228,20 +228,20 @@ elif page == "Price Estimation":
         rmse_test = np.sqrt(mse_test)
         mape_test = mean_absolute_percentage_error(y_test, y_pred_test) * 100
                 
-        start_pred_multi = time.time()
-        y_pred_train_multi = model_multi.predict(scaler.transform(X_train))
-        y_pred_test_multi = model_multi.predict(scaler.transform(X_test))
-        pred_time_multi = time.time() - start_pred_multi
+        # start_pred_multi = time.time()
+        # y_pred_train_multi = model_multi.predict(scaler.transform(X_train))
+        # y_pred_test_multi = model_multi.predict(scaler.transform(X_test))
+        # pred_time_multi = time.time() - start_pred_multi
         
-        r2_train_mk = r2_score(y_train, y_pred_train_multi)
-        mse_train_mk = mean_squared_error(y_train, y_pred_train_multi)
-        rmse_train_mk = np.sqrt(mse_train_mk)
-        mape_train_mk = mean_absolute_percentage_error(y_train, y_pred_train_multi) * 100
+        # r2_train_mk = r2_score(y_train, y_pred_train_multi)
+        # mse_train_mk = mean_squared_error(y_train, y_pred_train_multi)
+        # rmse_train_mk = np.sqrt(mse_train_mk)
+        # mape_train_mk = mean_absolute_percentage_error(y_train, y_pred_train_multi) * 100
 
-        r2_test_mk = r2_score(y_test, y_pred_test_multi)
-        mse_test_mk = mean_squared_error(y_test, y_pred_test_multi)
-        rmse_test_mk = np.sqrt(mse_test_mk)
-        mape_test_mk = mean_absolute_percentage_error(y_test, y_pred_test_multi) * 100
+        # r2_test_mk = r2_score(y_test, y_pred_test_multi)
+        # mse_test_mk = mean_squared_error(y_test, y_pred_test_multi)
+        # rmse_test_mk = np.sqrt(mse_test_mk)
+        # mape_test_mk = mean_absolute_percentage_error(y_test, y_pred_test_multi) * 100
 
         if estimate <= 0:
             st.error("Masukkan data yang valid.")
@@ -251,13 +251,13 @@ elif page == "Price Estimation":
 
             st.markdown("---")
             st.subheader("🖥️ Waktu Komputasi (CPU Time)")
-            col_time1, col_time2 = st.columns(2)
-            with col_time1:
-                st.metric("Single-Kernel - Train", f"{time_single:.4f} detik")
-                st.metric("Single-Kernel - Predict", f"{pred_time_single:.4f} detik")
-            with col_time2:
-                st.metric("Multi-Kernel - Train", f"{time_multi:.4f} detik")
-                st.metric("Multi-Kernel - Predict", f"{pred_time_multi:.4f} detik")
+            # col_time1, col_time2 = st.columns(2)
+            # with col_time1:
+            st.metric("Single-Kernel - Train", f"{time_single:.4f} detik")
+            st.metric("Single-Kernel - Predict", f"{pred_time_single:.4f} detik")
+            # with col_time2:
+                # st.metric("Multi-Kernel - Train", f"{time_multi:.4f} detik")
+                # st.metric("Multi-Kernel - Predict", f"{pred_time_multi:.4f} detik")
            
             st.markdown("---")
             st.subheader("🧪 Single-Kernel RBF SVR")
@@ -276,53 +276,53 @@ elif page == "Price Estimation":
             col7.metric("RMSE", f"{rmse_test:.2f}")
             col8.metric("MAPE", f"{mape_test:.2f}%")            
 
-            st.markdown("---")
-            st.subheader("🧪 Evaluasi Tambahan: Multi-Kernel RBF SVR")            
+            # st.markdown("---")
+            # st.subheader("🧪 Evaluasi Tambahan: Multi-Kernel RBF SVR")            
 
-            st.markdown("#### Training Set (Multi-Kernel)")
-            col9, col10, col11, col12 = st.columns(4)
-            col9.metric("R²", f"{r2_train_mk:.4f}")
-            col10.metric("MSE", f"{mse_train_mk:.2f}")
-            col11.metric("RMSE", f"{rmse_train_mk:.2f}")
-            col12.metric("MAPE", f"{mape_train_mk:.2f}%")
+            # st.markdown("#### Training Set (Multi-Kernel)")
+            # col9, col10, col11, col12 = st.columns(4)
+            # col9.metric("R²", f"{r2_train_mk:.4f}")
+            # col10.metric("MSE", f"{mse_train_mk:.2f}")
+            # col11.metric("RMSE", f"{rmse_train_mk:.2f}")
+            # col12.metric("MAPE", f"{mape_train_mk:.2f}%")
 
-            st.markdown("#### Test Set (Multi-Kernel)")
-            col13, col14, col15, col16 = st.columns(4)
-            col13.metric("R²", f"{r2_test_mk:.4f}")
-            col14.metric("MSE", f"{mse_test_mk:.2f}")
-            col15.metric("RMSE", f"{rmse_test_mk:.2f}")
-            col16.metric("MAPE", f"{mape_test_mk:.2f}%")
+            # st.markdown("#### Test Set (Multi-Kernel)")
+            # col13, col14, col15, col16 = st.columns(4)
+            # col13.metric("R²", f"{r2_test_mk:.4f}")
+            # col14.metric("MSE", f"{mse_test_mk:.2f}")
+            # col15.metric("RMSE", f"{rmse_test_mk:.2f}")
+            # col16.metric("MAPE", f"{mape_test_mk:.2f}%")
 
-            colA, colB = st.columns(2)
-            with colA:
-                fig, ax = plt.subplots(figsize=(8, 6))
-                ax.scatter(y_test, y_pred_test, alpha=0.6, color='mediumslateblue', label='Prediksi vs Aktual')
-                ax.plot([y_test.min(), y_test.max()], [y_test.min(), y_test.max()], 'r--')
-                ax.set_xlabel("Harga Aktual")
-                ax.set_ylabel("Harga Prediksi")
-                ax.set_title("Perbandingan Harga Aktual vs Prediksi (Test Set)")
-                ax.legend()
-                st.pyplot(fig)
+            # colA, colB = st.columns(2)
+            # with colA:
+            fig, ax = plt.subplots(figsize=(8, 6))
+            ax.scatter(y_test, y_pred_test, alpha=0.6, color='mediumslateblue', label='Prediksi vs Aktual')
+            ax.plot([y_test.min(), y_test.max()], [y_test.min(), y_test.max()], 'r--')
+            ax.set_xlabel("Harga Aktual")
+            ax.set_ylabel("Harga Prediksi")
+            ax.set_title("Perbandingan Harga Aktual vs Prediksi (Test Set)")
+            ax.legend()
+            st.pyplot(fig)
 
-            with colB:
-                fig2, ax2 = plt.subplots(figsize=(8, 6))
-                ax2.scatter(y_test, y_pred_test_multi, alpha=0.6, color='teal', label='Multi-Kernel Prediksi vs Aktual')
-                ax2.plot([y_test.min(), y_test.max()], [y_test.min(), y_test.max()], 'r--')
-                ax2.set_xlabel("Harga Aktual")
-                ax2.set_ylabel("Harga Prediksi")
-                ax2.set_title("Multi-Kernel: Harga Aktual vs Prediksi (Test Set)")
-                ax2.legend()
-                st.pyplot(fig2)
+            # with colB:
+            #     fig2, ax2 = plt.subplots(figsize=(8, 6))
+            #     ax2.scatter(y_test, y_pred_test_multi, alpha=0.6, color='teal', label='Multi-Kernel Prediksi vs Aktual')
+            #     ax2.plot([y_test.min(), y_test.max()], [y_test.min(), y_test.max()], 'r--')
+            #     ax2.set_xlabel("Harga Aktual")
+            #     ax2.set_ylabel("Harga Prediksi")
+            #     ax2.set_title("Multi-Kernel: Harga Aktual vs Prediksi (Test Set)")
+            #     ax2.legend()
+            #     st.pyplot(fig2)
 
-            fig3, ax3 = plt.subplots(figsize=(8, 6))
-            ax3.scatter(y_test, y_pred_test, alpha=0.6, label='Single-Kernel', color='mediumslateblue')
-            ax3.scatter(y_test, y_pred_test_multi, alpha=0.6, label='Multi-Kernel', color='teal')
-            ax3.plot([y_test.min(), y_test.max()], [y_test.min(), y_test.max()], 'r--')
-            ax3.set_xlabel("Harga Aktual")
-            ax3.set_ylabel("Harga Prediksi")
-            ax3.set_title("Perbandingan Prediksi: Single vs Multi Kernel")
-            ax3.legend()
-            st.pyplot(fig3)
+            # fig3, ax3 = plt.subplots(figsize=(8, 6))
+            # ax3.scatter(y_test, y_pred_test, alpha=0.6, label='Single-Kernel', color='mediumslateblue')
+            # ax3.scatter(y_test, y_pred_test_multi, alpha=0.6, label='Multi-Kernel', color='teal')
+            # ax3.plot([y_test.min(), y_test.max()], [y_test.min(), y_test.max()], 'r--')
+            # ax3.set_xlabel("Harga Aktual")
+            # ax3.set_ylabel("Harga Prediksi")
+            # ax3.set_title("Perbandingan Prediksi: Single vs Multi Kernel")
+            # ax3.legend()
+            # st.pyplot(fig3)
 
 
 elif page == "About Us":    
