@@ -89,17 +89,8 @@ The “Gemilang” team hopes to make a positive contribution in completing this
 
     
 
-elif page == "Price Estimation":
-    from sklearn.linear_model import Ridge
-    from sklearn.metrics.pairwise import rbf_kernel
-   
+elif page == "Price Estimation":    
     class SVR_single:
-        # def rbf_kernel(x1, x2, gamma):
-        #     return math.exp(-gamma * sum((a - b) ** 2 for a, b in zip(x1, x2)))
-
-        # def svr_predict_rbf(x_new, X_train, alpha, alpha_star, gamma, b):
-        #     return sum((alpha[i] - alpha_star[i]) * rbf_kernel(X_train[i], x_new, gamma) for i in range(len(X_train))) + b
-
         def __init__(self, C=1.0, gamma=0.01):
             self.C = C
             self.gamma = gamma
@@ -114,26 +105,26 @@ elif page == "Price Estimation":
             K_test = rbf_kernel(X, self.X_train, gamma=self.gamma)
             return self.model.predict(K_test)
 
-    # class MultiKernelSVR:
-    #     def __init__(self, C=10.0, gammas=[0.001, 0.01, 0.1]):
-    #         self.C = C
-    #         self.gammas = gammas
-    #         self.model = Ridge(alpha=1.0 / (2 * self.C))
+    class MultiKernelSVR:
+        def __init__(self, C=10.0, gammas=[0.001, 0.01, 0.1]):
+            self.C = C
+            self.gammas = gammas
+            self.model = Ridge(alpha=1.0 / (2 * self.C))
 
-    #     def multi_kernel(self, X1, X2):
-    #         K_total = np.zeros((X1.shape[0], X2.shape[0]))
-    #         for gamma in self.gammas:
-    #             K_total += rbf_kernel(X1, X2, gamma=gamma)
-    #         return K_total / len(self.gammas)
+        def multi_kernel(self, X1, X2):
+            K_total = np.zeros((X1.shape[0], X2.shape[0]))
+            for gamma in self.gammas:
+                K_total += rbf_kernel(X1, X2, gamma=gamma)
+            return K_total / len(self.gammas)
 
-    #     def fit(self, X, y):
-    #         self.X_train = X
-    #         K = self.multi_kernel(X, X)
-    #         self.model.fit(K, y)
+        def fit(self, X, y):
+            self.X_train = X
+            K = self.multi_kernel(X, X)
+            self.model.fit(K, y)
 
-    #     def predict(self, X):
-    #         K_test = self.multi_kernel(X, self.X_train)
-    #         return self.model.predict(K_test)
+        def predict(self, X):
+            K_test = self.multi_kernel(X, self.X_train)
+            return self.model.predict(K_test)
 
     fitur = [
         'bedrooms', 'real_bathrooms', 'living_in_m2', 'grade',
@@ -148,7 +139,7 @@ elif page == "Price Estimation":
     df_test = pd.read_csv('Documents/df_test.csv')
     X_test = df_test[fitur].values.astype(np.float32)
     y_test = df_test['price'].values.astype(np.float32)       
-    
+
     st.header(':rainbow[PRICE ESTIMATION]', divider='rainbow')
     st.subheader('Prediksi harga rumah berdasarkan spesifikasi')
 
@@ -160,7 +151,7 @@ elif page == "Price Estimation":
 
         with col2:
             rating = st.radio("Tingkat Kualitas Bangunan (Grade):",
-                            ["⭐️", "⭐️⭐️", "⭐️⭐️⭐️", "⭐️⭐️⭐️⭐️", "⭐️⭐️⭐️⭐️⭐️"], index=2, horizontal=True)
+                              ["⭐️", "⭐️⭐️", "⭐️⭐️⭐️", "⭐️⭐️⭐️⭐️", "⭐️⭐️⭐️⭐️⭐️"], index=2, horizontal=True)
             user_input['grade'] = len(rating)
             user_input['living_in_m2'] = st.number_input("Luas Bangunan (m²):", min_value=10.0, value=100.0)
             col_input1, col_input2 = st.columns(2)
@@ -183,41 +174,53 @@ elif page == "Price Estimation":
             user_input['renovated'] = 1 if st.radio("Sudah Renovasi?", ["Tidak", "Ya"], horizontal=True) == "Ya" else 0
 
         submit = st.form_submit_button("🔮 Prediksi Sekarang")
-    
-    @st.cache_resource
-    def load_model():
+
+    MODEL_PATH_SINGLE = "model_svr_single.joblib"
+    SCALER_PATH = "scaler.joblib"
+    MODEL_PATH_MULTI = "model_svr_multi.joblib"
+
+    def train_and_save_models():
         scaler = StandardScaler()
         X_scaled = scaler.fit_transform(X_train)
-        model = SVR_single(C=10.0, gamma=0.01)
 
-        start_time = time.time()
-        model.fit(X_scaled, y_train)
-        train_time = time.time() - start_time
+        model_single = SVR_single(C=10.0, gamma=0.01)
+        start_time_single = time.time()
+        model_single.fit(X_scaled, y_train)
+        time_single = time.time() - start_time_single
 
-        return model, scaler, train_time
+        model_multi = MultiKernelSVR(C=10.0, gammas=[0.001, 0.01, 0.1])
+        start_time_multi = time.time()
+        model_multi.fit(X_scaled, y_train)
+        time_multi = time.time() - start_time_multi
 
-    if submit:       
-        # @st.cache_resource
-        # def load_multi_kernel_model(X_scaled, y_train):
-        #     model = MultiKernelSVR(C=10.0, gammas=[0.001, 0.01, 0.1])
+        joblib.dump(model_single, MODEL_PATH_SINGLE)
+        joblib.dump(model_multi, MODEL_PATH_MULTI)
+        joblib.dump(scaler, SCALER_PATH)
 
-        #     start_time = time.time()
-        #     model.fit(X_scaled, y_train)
-        #     train_time = time.time() - start_time
+        return model_single, model_multi, scaler, time_single, time_multi
 
-        #     return model, train_time
+    def load_models():
+        model_single = joblib.load(MODEL_PATH_SINGLE)
+        model_multi = joblib.load(MODEL_PATH_MULTI)
+        scaler = joblib.load(SCALER_PATH)
+        return model_single, model_multi, scaler
+
+    if submit:
+        if not (os.path.exists(MODEL_PATH_SINGLE) and os.path.exists(MODEL_PATH_MULTI) and os.path.exists(SCALER_PATH)):
+            model_single, model_multi, scaler, time_single, time_multi = train_and_save_models()
+        else:
+            model_single, model_multi, scaler = load_models()
+            time_single, time_multi = 0, 0  # Waktu train diabaikan karena sudah pre-trained
 
         user_fitur = np.array([list(user_input.values())], dtype=np.float32)
-        model, scaler, time_single = load_model()
         user_scaled = scaler.transform(user_fitur)
-        # model_multi, time_multi = load_multi_kernel_model(scaler.transform(X_train), y_train)
-        
+
         start_pred_single = time.time()
-        estimate = model.predict(user_scaled)[0]
-        y_pred_train = model.predict(scaler.transform(X_train))
-        y_pred_test = model.predict(scaler.transform(X_test))
+        estimate = model_single.predict(user_scaled)[0]
+        y_pred_train = model_single.predict(scaler.transform(X_train))
+        y_pred_test = model_single.predict(scaler.transform(X_test))
         pred_time_single = time.time() - start_pred_single        
-       
+
         rr2 = r2_score(y_train, y_pred_train)
         msee = mean_squared_error(y_train, y_pred_train)
         rmsee = np.sqrt(msee)
@@ -227,21 +230,21 @@ elif page == "Price Estimation":
         mse_test = mean_squared_error(y_test, y_pred_test)
         rmse_test = np.sqrt(mse_test)
         mape_test = mean_absolute_percentage_error(y_test, y_pred_test) * 100
-                
-        # start_pred_multi = time.time()
-        # y_pred_train_multi = model_multi.predict(scaler.transform(X_train))
-        # y_pred_test_multi = model_multi.predict(scaler.transform(X_test))
-        # pred_time_multi = time.time() - start_pred_multi
-        
-        # r2_train_mk = r2_score(y_train, y_pred_train_multi)
-        # mse_train_mk = mean_squared_error(y_train, y_pred_train_multi)
-        # rmse_train_mk = np.sqrt(mse_train_mk)
-        # mape_train_mk = mean_absolute_percentage_error(y_train, y_pred_train_multi) * 100
 
-        # r2_test_mk = r2_score(y_test, y_pred_test_multi)
-        # mse_test_mk = mean_squared_error(y_test, y_pred_test_multi)
-        # rmse_test_mk = np.sqrt(mse_test_mk)
-        # mape_test_mk = mean_absolute_percentage_error(y_test, y_pred_test_multi) * 100
+        start_pred_multi = time.time()
+        y_pred_train_multi = model_multi.predict(scaler.transform(X_train))
+        y_pred_test_multi = model_multi.predict(scaler.transform(X_test))
+        pred_time_multi = time.time() - start_pred_multi
+
+        r2_train_mk = r2_score(y_train, y_pred_train_multi)
+        mse_train_mk = mean_squared_error(y_train, y_pred_train_multi)
+        rmse_train_mk = np.sqrt(mse_train_mk)
+        mape_train_mk = mean_absolute_percentage_error(y_train, y_pred_train_multi) * 100
+
+        r2_test_mk = r2_score(y_test, y_pred_test_multi)
+        mse_test_mk = mean_squared_error(y_test, y_pred_test_multi)
+        rmse_test_mk = np.sqrt(mse_test_mk)
+        mape_test_mk = mean_absolute_percentage_error(y_test, y_pred_test_multi) * 100
 
         if estimate <= 0:
             st.error("Masukkan data yang valid.")
@@ -251,79 +254,47 @@ elif page == "Price Estimation":
 
             st.markdown("---")
             st.subheader("🖥️ Waktu Komputasi (CPU Time)")
-            # col_time1, col_time2 = st.columns(2)
-            # with col_time1:
-            st.metric("Single-Kernel - Train", f"{time_single:.4f} detik")
-            st.metric("Single-Kernel - Predict", f"{pred_time_single:.4f} detik")
-            # with col_time2:
-                # st.metric("Multi-Kernel - Train", f"{time_multi:.4f} detik")
-                # st.metric("Multi-Kernel - Predict", f"{pred_time_multi:.4f} detik")
-           
+            col_time1, col_time2 = st.columns(2)
+            with col_time1:
+                st.caption("Training SVR Single Kernel")
+                st.text(f"{time_single:.3f} detik")
+                st.caption("Prediksi SVR Single Kernel")
+                st.text(f"{pred_time_single:.3f} detik")
+            with col_time2:
+                st.caption("Training SVR Multi Kernel")
+                st.text(f"{time_multi:.3f} detik")
+                st.caption("Prediksi SVR Multi Kernel")
+                st.text(f"{pred_time_multi:.3f} detik")
+
             st.markdown("---")
-            st.subheader("🧪 Single-Kernel RBF SVR")
+            st.subheader("📊 Evaluasi Model SVR Single Kernel (Train & Test)")
+            st.write(f"Koefisien Determinasi (Train): {rr2:.4f}")
+            st.write(f"Root Mean Squared Error (Train): {rmsee:.4f}")
+            st.write(f"Mean Absolute Percentage Error (Train): {mapee:.2f}%")
+            st.write(f"Koefisien Determinasi (Test): {r2_test:.4f}")
+            st.write(f"Root Mean Squared Error (Test): {rmse_test:.4f}")
+            st.write(f"Mean Absolute Percentage Error (Test): {mape_test:.2f}%")
 
-            st.markdown("#### Training Set (Single-Kernel)")
-            col1, col2, col3, col4 = st.columns(4)
-            col1.metric("R²", f"{rr2:.4f}")
-            col2.metric("MSE", f"{msee:.2f}")
-            col3.metric("RMSE", f"{rmsee:.2f}")
-            col4.metric("MAPE", f"{mapee:.2f}%")
+            st.markdown("---")
+            st.subheader("📊 Evaluasi Model SVR Multi Kernel (Train & Test)")
+            st.write(f"Koefisien Determinasi (Train): {r2_train_mk:.4f}")
+            st.write(f"Root Mean Squared Error (Train): {rmse_train_mk:.4f}")
+            st.write(f"Mean Absolute Percentage Error (Train): {mape_train_mk:.2f}%")
+            st.write(f"Koefisien Determinasi (Test): {r2_test_mk:.4f}")
+            st.write(f"Root Mean Squared Error (Test): {rmse_test_mk:.4f}")
+            st.write(f"Mean Absolute Percentage Error (Test): {mape_test_mk:.2f}%")
 
-            st.markdown("#### Test Set (Single-Kernel)")
-            col5, col6, col7, col8 = st.columns(4)
-            col5.metric("R²", f"{r2_test:.4f}")
-            col6.metric("MSE", f"{mse_test:.2f}")
-            col7.metric("RMSE", f"{rmse_test:.2f}")
-            col8.metric("MAPE", f"{mape_test:.2f}%")            
-
-            # st.markdown("---")
-            # st.subheader("🧪 Evaluasi Tambahan: Multi-Kernel RBF SVR")            
-
-            # st.markdown("#### Training Set (Multi-Kernel)")
-            # col9, col10, col11, col12 = st.columns(4)
-            # col9.metric("R²", f"{r2_train_mk:.4f}")
-            # col10.metric("MSE", f"{mse_train_mk:.2f}")
-            # col11.metric("RMSE", f"{rmse_train_mk:.2f}")
-            # col12.metric("MAPE", f"{mape_train_mk:.2f}%")
-
-            # st.markdown("#### Test Set (Multi-Kernel)")
-            # col13, col14, col15, col16 = st.columns(4)
-            # col13.metric("R²", f"{r2_test_mk:.4f}")
-            # col14.metric("MSE", f"{mse_test_mk:.2f}")
-            # col15.metric("RMSE", f"{rmse_test_mk:.2f}")
-            # col16.metric("MAPE", f"{mape_test_mk:.2f}%")
-
-            # colA, colB = st.columns(2)
-            # with colA:
-            fig, ax = plt.subplots(figsize=(8, 6))
-            ax.scatter(y_test, y_pred_test, alpha=0.6, color='mediumslateblue', label='Prediksi vs Aktual')
-            ax.plot([y_test.min(), y_test.max()], [y_test.min(), y_test.max()], 'r--')
-            ax.set_xlabel("Harga Aktual")
-            ax.set_ylabel("Harga Prediksi")
-            ax.set_title("Perbandingan Harga Aktual vs Prediksi (Test Set)")
-            ax.legend()
-            st.pyplot(fig)
-
-            # with colB:
-            #     fig2, ax2 = plt.subplots(figsize=(8, 6))
-            #     ax2.scatter(y_test, y_pred_test_multi, alpha=0.6, color='teal', label='Multi-Kernel Prediksi vs Aktual')
-            #     ax2.plot([y_test.min(), y_test.max()], [y_test.min(), y_test.max()], 'r--')
-            #     ax2.set_xlabel("Harga Aktual")
-            #     ax2.set_ylabel("Harga Prediksi")
-            #     ax2.set_title("Multi-Kernel: Harga Aktual vs Prediksi (Test Set)")
-            #     ax2.legend()
-            #     st.pyplot(fig2)
-
-            # fig3, ax3 = plt.subplots(figsize=(8, 6))
-            # ax3.scatter(y_test, y_pred_test, alpha=0.6, label='Single-Kernel', color='mediumslateblue')
-            # ax3.scatter(y_test, y_pred_test_multi, alpha=0.6, label='Multi-Kernel', color='teal')
-            # ax3.plot([y_test.min(), y_test.max()], [y_test.min(), y_test.max()], 'r--')
-            # ax3.set_xlabel("Harga Aktual")
-            # ax3.set_ylabel("Harga Prediksi")
-            # ax3.set_title("Perbandingan Prediksi: Single vs Multi Kernel")
-            # ax3.legend()
-            # st.pyplot(fig3)
-
+            st.markdown("---")
+            st.subheader("Grafik Prediksi Harga vs Aktual (Train Data)")
+            plt.figure(figsize=(10, 6))
+            plt.plot(y_train, label="Harga Aktual")
+            plt.plot(y_pred_train, label="Prediksi SVR Single")
+            plt.plot(y_pred_train_multi, label="Prediksi SVR Multi Kernel")
+            plt.legend()
+            plt.title("Harga Aktual vs Prediksi - Data Training")
+            plt.xlabel("Data Index")
+            plt.ylabel("Harga")
+            st.pyplot(plt)
 
 elif page == "About Us":    
     pemanis.profil()

@@ -11,6 +11,10 @@ import numpy as np
 from sklearn.metrics import r2_score, mean_squared_error, mean_absolute_percentage_error            
 from sklearn.preprocessing import StandardScaler
 import matplotlib.pyplot as plt
+from sklearn.linear_model import Ridge
+from sklearn.metrics.pairwise import rbf_kernel
+from sklearn.preprocessing import StandardScaler
+import joblib
 
 st.set_page_config(layout="wide")
 
