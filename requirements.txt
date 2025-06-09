@@ -1,9 +1,9 @@
-numpy==2.1.1
-pandas==2.2.3
-streamlit
 pip==24.3.1
-Pillow
-streamlit-option-menu
 openpyxl
-scikit-learn
-matplotlib
+streamlit==1.40.0
+pandas==2.2.3
+scikit-learn==1.5.2
+numpy==2.2.4
+matplotlib==3.9.2
+pillow==10.4.0
+streamlit-option-menu==0.4.0
