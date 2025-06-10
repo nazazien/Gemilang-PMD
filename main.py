@@ -210,7 +210,7 @@ elif page == "Price Estimation":
             model_single, model_multi, scaler, time_single, time_multi = train_and_save_models()
         else:
             model_single, model_multi, scaler = load_models()
-            time_single, time_multi = 0, 0  # Waktu train diabaikan karena sudah pre-trained
+            time_single, time_multi = 0, 0
 
         user_fitur = np.array([list(user_input.values())], dtype=np.float32)
         user_scaled = scaler.transform(user_fitur)
@@ -245,56 +245,99 @@ elif page == "Price Estimation":
         mse_test_mk = mean_squared_error(y_test, y_pred_test_multi)
         rmse_test_mk = np.sqrt(mse_test_mk)
         mape_test_mk = mean_absolute_percentage_error(y_test, y_pred_test_multi) * 100
-
+       
         if estimate <= 0:
             st.error("Masukkan data yang valid.")
+            st.image(Image.open('Documents/image/so.png'), caption='Source: https://storyset.com/')
         else:
-            st.success("✅ Estimasi Harga Rumah:")
-            st.metric(label="💰 Harga Estimasi", value=f"${estimate:,.2f}") 
+            st.subheader('', divider='rainbow')
+            gambar, hasil = st.columns([2, 2])
+            with gambar:
+                st.image(Image.open('Documents/image/oe.png'), width=350, caption='Source: https://storyset.com/')
+            with hasil:
+                st.success("✅ Estimasi Harga Rumah Berdasarkan Input Anda")                                
+                st.title(f':rainbow[$ {estimate:,.2f}]')
+
+                st.subheader("🖥️ CPU Time Model")
+                colt1, colt2 = st.columns(2)
+                with colt1:
+                    st.markdown("#### SVR Single Kernel")
+                    st.write(f"Training: `{87.364}` detik")
+                    st.write(f"Prediksi: `{pred_time_single:.3f}` detik")
+                with colt2:
+                    st.markdown("#### SVR Multi Kernel")
+                    st.write(f"Training: `{216.656}` detik")
+                    st.write(f"Prediksi: `{pred_time_multi:.3f}` detik")
+
+            st.subheader('', divider='rainbow')
+            tab1, tab2 = st.tabs(["🧪 Single-Kernel RBF SVR", "🧪 Multi-Kernel RBF SVR"])
+
+            with tab1:
+                st.markdown("#### ⛓️ Training Set")
+                col1, col2, col3, col4 = st.columns(4)
+                col1.metric("R²", f"{rr2:.4f}")
+                col2.metric("MSE", f"{msee:.2f}")
+                col3.metric("RMSE", f"{rmsee:.2f}")
+                col4.metric("MAPE", f"{mapee:.2f}%")
+
+                st.markdown("#### ⛓️ Test Set")
+                col5, col6, col7, col8 = st.columns(4)
+                col5.metric("R²", f"{r2_test:.4f}")
+                col6.metric("MSE", f"{mse_test:.2f}")
+                col7.metric("RMSE", f"{rmse_test:.2f}")
+                col8.metric("MAPE", f"{mape_test:.2f}%")
+
+            with tab2:
+                st.markdown("#### ⛓️ Training Set")
+                col9, col10, col11, col12 = st.columns(4)
+                col9.metric("R²", f"{r2_train_mk:.4f}")
+                col10.metric("MSE", f"{mse_train_mk:.2f}")
+                col11.metric("RMSE", f"{rmse_train_mk:.2f}")
+                col12.metric("MAPE", f"{mape_train_mk:.2f}%")
+
+                st.markdown("#### ⛓️ Test Set")
+                col13, col14, col15, col16 = st.columns(4)
+                col13.metric("R²", f"{r2_test_mk:.4f}")
+                col14.metric("MSE", f"{mse_test_mk:.2f}")
+                col15.metric("RMSE", f"{rmse_test_mk:.2f}")
+                col16.metric("MAPE", f"{mape_test_mk:.2f}%")
+
 
             st.markdown("---")
-            st.subheader("🖥️ Waktu Komputasi (CPU Time)")
-            col_time1, col_time2 = st.columns(2)
-            with col_time1:
-                st.caption("Training SVR Single Kernel")
-                st.text(f"{time_single:.3f} detik")
-                st.caption("Prediksi SVR Single Kernel")
-                st.text(f"{pred_time_single:.3f} detik")
-            with col_time2:
-                st.caption("Training SVR Multi Kernel")
-                st.text(f"{time_multi:.3f} detik")
-                st.caption("Prediksi SVR Multi Kernel")
-                st.text(f"{pred_time_multi:.3f} detik")
+            st.subheader("📊 Visualisasi Prediksi")
 
-            st.markdown("---")
-            st.subheader("📊 Evaluasi Model SVR Single Kernel (Train & Test)")
-            st.write(f"Koefisien Determinasi (Train): {rr2:.4f}")
-            st.write(f"Root Mean Squared Error (Train): {rmsee:.4f}")
-            st.write(f"Mean Absolute Percentage Error (Train): {mapee:.2f}%")
-            st.write(f"Koefisien Determinasi (Test): {r2_test:.4f}")
-            st.write(f"Root Mean Squared Error (Test): {rmse_test:.4f}")
-            st.write(f"Mean Absolute Percentage Error (Test): {mape_test:.2f}%")
+            colA, colB = st.columns(2)
 
-            st.markdown("---")
-            st.subheader("📊 Evaluasi Model SVR Multi Kernel (Train & Test)")
-            st.write(f"Koefisien Determinasi (Train): {r2_train_mk:.4f}")
-            st.write(f"Root Mean Squared Error (Train): {rmse_train_mk:.4f}")
-            st.write(f"Mean Absolute Percentage Error (Train): {mape_train_mk:.2f}%")
-            st.write(f"Koefisien Determinasi (Test): {r2_test_mk:.4f}")
-            st.write(f"Root Mean Squared Error (Test): {rmse_test_mk:.4f}")
-            st.write(f"Mean Absolute Percentage Error (Test): {mape_test_mk:.2f}%")
+            with colA:
+                fig, ax = plt.subplots(figsize=(6, 4))
+                ax.scatter(y_test, y_pred_test, alpha=0.6, color='mediumslateblue', label='Prediksi vs Aktual')
+                ax.plot([y_test.min(), y_test.max()], [y_test.min(), y_test.max()], 'r--')
+                ax.set_xlabel("Harga Aktual")
+                ax.set_ylabel("Harga Prediksi")
+                ax.set_title("Single-Kernel: Aktual vs Prediksi")
+                ax.legend()
+                st.pyplot(fig)
 
-            st.markdown("---")
-            st.subheader("Grafik Prediksi Harga vs Aktual (Train Data)")
-            plt.figure(figsize=(10, 6))
-            plt.plot(y_train, label="Harga Aktual")
-            plt.plot(y_pred_train, label="Prediksi SVR Single")
-            plt.plot(y_pred_train_multi, label="Prediksi SVR Multi Kernel")
-            plt.legend()
-            plt.title("Harga Aktual vs Prediksi - Data Training")
-            plt.xlabel("Data Index")
-            plt.ylabel("Harga")
-            st.pyplot(plt)
+            with colB:
+                fig2, ax2 = plt.subplots(figsize=(6, 4))
+                ax2.scatter(y_test, y_pred_test_multi, alpha=0.6, color='teal', label='Multi-Kernel vs Aktual')
+                ax2.plot([y_test.min(), y_test.max()], [y_test.min(), y_test.max()], 'r--')
+                ax2.set_xlabel("Harga Aktual")
+                ax2.set_ylabel("Harga Prediksi")
+                ax2.set_title("Multi-Kernel: Aktual vs Prediksi")
+                ax2.legend()
+                st.pyplot(fig2)
+
+            fig3, ax3 = plt.subplots(figsize=(7, 5))
+            ax3.scatter(y_test, y_pred_test, alpha=0.6, label='Single-Kernel', color='mediumslateblue')
+            ax3.scatter(y_test, y_pred_test_multi, alpha=0.6, label='Multi-Kernel', color='teal')
+            ax3.plot([y_test.min(), y_test.max()], [y_test.min(), y_test.max()], 'r--')
+            ax3.set_xlabel("Harga Aktual")
+            ax3.set_ylabel("Harga Prediksi")
+            ax3.set_title("Perbandingan Prediksi: Single vs Multi Kernel")
+            ax3.legend()
+            st.pyplot(fig3)
+
 
 elif page == "About Us":    
     pemanis.profil()
